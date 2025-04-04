@@ -55,8 +55,8 @@ class CrossEvents(Cross):
             print("name: " + str(self.name)+ '\n')
 
         
-        print("require: " + self.require + '\n')
-        print("consiquice: " + self.consiquice+ '\n')
+        print("require: " + str(self.require) + '\n')
+        print("consiquice: " + str(self.consiquice)+ '\n')
         
         if self.des:
             print("description: " + str(self.des)+ '\n')

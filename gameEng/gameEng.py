@@ -99,6 +99,7 @@ class oddPlayer(player):
 
 
 def getRandomItems(data):
+    #print(data)
     resultList = []
     
     if isinstance(data, dict):
@@ -120,7 +121,10 @@ def getRandomItems(data):
         
         
     else :
-        resultList = random.sample(data, len(data))  # Shuffle list items randomly
+        #print(type(data))
+        resultList = random.sample(list(data), len(data))  # Shuffle list items randomly
+        for this in resultList:
+            print("resultList: "+ str(this))
     
     #print(str(resultList)+ "\n")
         
@@ -178,24 +182,24 @@ def handEventCards(eventCard):
 def main():
     
     #game peraiters
-    numPlayer = int(input("how many players: "))
+    numPlayer = 4#int(input("how many players: "))
     
     #tiles
-    numTiles  = int(input("how many tiles: "))
-    startingTileChance = int(input("chance tiles: "))
+    numTiles  = 40 #int(input("how many tiles: "))
+    startingTileChance = 80 #int(input("chance tiles: "))
     
     
     # cross
-    includeCrossEvents = bool(input("inlcude cross events: ").lower() =="true" ) 
-    includeCrossChoise = bool(input ("inlcude cross choices: ").lower() == "true")
+    includeCrossEvents = True #bool(input("inlcude cross events: ").lower() =="true" ) 
+    includeCrossChoise = True #bool(input ("inlcude cross choices: ").lower() == "true")
     
     if ( includeCrossEvents):
-        mixCrossEvents = bool(input("mix cross events: ").lower() =="true" ) 
+        mixCrossEvents = True #bool(input("mix cross events: ").lower() =="true" ) 
     else:
         mixCrossEvents =False
         
     if (includeCrossChoise ):
-        mixCrossChoises = bool(input ("mix cross choices: ").lower() == "true")
+        mixCrossChoises = True #bool(input ("mix cross choices: ").lower() == "true")
     else:
         mixCrossChoises =False
     
@@ -203,10 +207,10 @@ def main():
     #mixBuffAndDebuff = bool(input("mix buffs: ").lower() =="true" ) 
     
     #evets
-    useRangeBuffs = bool(input("generate events based on range: ").lower() == "true")
+    useRangeBuffs =  True #bool(input("generate events based on range: ").lower() == "true")
     
     if useRangeBuffs:
-        useRangeofCards = int(input("how many generated cards: "))
+        useRangeofCards = 50 #int(input("how many generated cards: "))
     else:
         useRangeofCards = None
         
@@ -261,6 +265,9 @@ def main():
     
     
     def handDecks (dictionary, deckList, discardDeck):
+        print(dictionary )
+        print(deckList )
+        print( discardDeck)
         if ( isinstance(deckList, list)):
             if (len(deckList) == 0):
                 if (len(discardDeck) > 0):
@@ -278,6 +285,8 @@ def main():
         
         else: 
             print("you fuck up")
+            
+    #def readTitelTypes()
     
     
     
@@ -340,6 +349,9 @@ def main():
                 (buffANDdebDic["BCard"], debuffDeck, discard[3][1]),
                 (buffANDdebDic["G/BCard"], buffANDdebuffDeck, discard[3][2]),
             ]:
+                
+                
+                
                 if len(deck) == 0:
                     outputdeck = handDecks(dictionary, deck, discard_pile)  # Make sure this returns an iterable
                     
