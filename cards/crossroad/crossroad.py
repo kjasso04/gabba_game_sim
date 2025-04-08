@@ -96,8 +96,10 @@ def generateEvents(events, mix = False):
     if (mix):
         
         
-        requDic = events['require'].tolist()
-        consDic = events['consiquice'].tolist()
+        requDic = events['require'].dropna().tolist()
+        print(requDic)
+        consDic = events['consiquice'].dropna().tolist()
+        print(consDic)
             
             
        
