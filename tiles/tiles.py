@@ -33,10 +33,39 @@ Color = {
 
 
 class Tile:
+    
+    
+    
+    def assign_color_or_item(self):
+        otherColor = []
+        # 40% chance for otherColor to be not white (assuming white is the default color)
+        other_color_chance = random.randint(1, 100)
+        if other_color_chance <= 40:
+            # 30% chance for it to be red, yellow, or magenta
+            otherColor.append(random.choice(["RED", "YELLOW", "MAGENTA"]))
+            
+        else:
+            otherColor.append("white")  # Default to white if not 40%
+            
+        item_chance = random.randint(1, 100)
+        if (other_color_chance <= 40 and item_chance <= 30) or (other_color_chance >= 40 and item_chance <= 40):
+                otherColor.append(random.choice(["RED", "YELLOW", "MAGENTA"]))
+        else:
+            otherColor.append("white")  # If not in 30%, set to white
+        
+        return  otherColor
+
+        
+
+    
+    
+    
     def __init__(self, color, happen):
         self.color = color
         self.happen = happen
         self.door = [True, False, False, False]  # Now an instance attribute
+        
+        
     
     def genDoors(self, startChance, chanceDecrease, order=[3, 2, 1]):
         chance = startChance
@@ -52,6 +81,7 @@ class Tile:
         return self  # Return self to be used in the dictionary
 
     def displayTiles(self):
+        
         tileString = f"{Color[self.color]}[=][_][=]\n"
 
         tileString += "[_]" if self.door[1] else "[=]"
@@ -60,7 +90,12 @@ class Tile:
 
         tileString += "[=][_][=]\n" if self.door[3] else f"[=][=][=]\n"
         
-        tileString += Color['RESET']
+        tileString += f"{Color['RESET']}\n"
+        
+        tileString += f"other colors: {self.assign_color_or_item()}"
+        
+        
+        
 
         return tileString  # Return the string instead of printing
 

@@ -97,10 +97,17 @@ def generateEvents(events, mix = False):
         
         
         requDic = events['require'].dropna().tolist()
+        '''
+        print("requDic: \n")
         print(requDic)
+        print('\n')
+        '''
         consDic = events['consiquice'].dropna().tolist()
+        '''
+        print("consDic: \n")
         print(consDic)
-            
+        print('\n')
+        '''
             
        
         #loops throught the min lenght of the rquierments and consiquices

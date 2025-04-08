@@ -24,63 +24,64 @@ data = pd.read_excel(file_path, engine='openpyxl')
 
 class iteamCard(Card):
     def __init__(self, function, multiUses =False, numUses = 1, Xmin = 0, Xmax = 0, name = None, desc = None ):
+        '''
+        print("Xmin:" + str(Xmin))
+        print("Xmax:" + str(Xmax) )
+        '''
     
-       print("Xmin:" + str(Xmin))
-       print("Xmax:" + str(Xmax) )
-   
-       self.Xvalue = None
-       
-       self.function = function
-       
-       if pd.notna(Xmin) and pd.notna(Xmax):
-            try:
-                self.Xvalue = random.randint( int(Xmin), int(Xmax) )
-                self.function = self.function.replace("{x}", str(self.Xvalue))
-            except ValueError:
-                print(f"Invalid Xmin or Xmax: {Xmin}, {Xmax}")
-
-       
-       
-       
-       self.name = name
-       self.desc = desc
-       
-       
-       if(multiUses):
-           self.numUses = numUses
-       else:
-           self.numUses = 1
-       
-       
-       
-       
+        self.Xvalue = None
         
+        self.function = function
+        
+        if pd.notna(Xmin) and pd.notna(Xmax):
+                try:
+                    self.Xvalue = random.randint( int(Xmin), int(Xmax) )
+                    self.function = self.function.replace("{x}", str(self.Xvalue))
+                except ValueError:
+                    print(f"Invalid Xmin or Xmax: {Xmin}, {Xmax}")
 
         
-       
-    def canUse(self):
-        if (self.numUses > 0):
-            return True
-        return False
-    
-    def useIteam(self):
-        if self.canUse():
-            print(self.function)
-            self.numUses =  self.numUses - 1
+        
+        
+        self.name = name
+        self.desc = desc
+        
+        
+        if(multiUses):
+            self.numUses = numUses
         else:
-            print("you can't use this iteam")
-            
-        return self.numUses
-    
-    def displayCard(self):
-        if (self.name):
-            print("name: " +str(self.name)+'\n')
-        if (self.desc):
-            print("description: "+str(self.desc)+ '\n')
-            
-        print("function: " +str(self.function) + '\n')
+            self.numUses = 1
         
-        print("number of uses: "+ str(self.numUses)+'\n')
+        
+        
+        
+            
+
+            
+        
+        def canUse(self):
+            if (self.numUses > 0):
+                return True
+            return False
+        
+        def useIteam(self):
+            if self.canUse():
+                print(self.function)
+                self.numUses =  self.numUses - 1
+            else:
+                print("you can't use this iteam")
+                
+            return self.numUses
+        
+        def displayCard(self):
+            if (self.name):
+                print("name: " +str(self.name)+'\n')
+            if (self.desc):
+                print("description: "+str(self.desc)+ '\n')
+                
+            print("function: " +str(self.function) + '\n')
+            
+            print("number of uses: "+ str(self.numUses)+'\n')
         
         
 def main():

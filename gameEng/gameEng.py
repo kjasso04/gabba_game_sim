@@ -686,10 +686,11 @@ def main():
     
     isGameComplet = False
     
+    '''
     print("alltypes")
     for card in gameStorage.gameDecks[BuffANDdebuff]:
         print(card.displayCard())
-    
+    '''
     
         
     indexPlayer  = -1
