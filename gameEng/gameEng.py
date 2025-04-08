@@ -17,11 +17,16 @@ from cards.buffANDdebuff.buffANDdebuff import BuffANDdebuff
 from cards.crossroad.crossroad import Cross
 from cards.crossroad.crossroad import CrossEvents
 from cards.crossroad.crossroad import CrossChoise
+from cards.iteam.iteam import iteamCard
+from adversary.adversary import adversaryCard
 
 
+#file code
+from cards.iteam import iteam
 from cards.buffANDdebuff import buffANDdebuff
 from cards.crossroad import crossroad
 from cards.event import event
+from adversary import adversary
 
 from tiles import tiles
 
@@ -38,16 +43,33 @@ class player:
         self.isFliped = False
         self.inCrash = False
         self.coreSpot.append(instrument)  # Use append, not push (Python lists don't have push)
+        
+    #add item to player
+    def addItem(self, item):
+        self.item.append(item)
+        print("added item"+ str(item.name))
     
+    def removeItem(self, item):
+        if item in self.item:
+            self.item.remove(item)
+            print("removed item"+ str(item.name))
+        else:
+            print("item not found")
+            
+    # buff or debuff to hand
     def addToHand(self, card):
+        #print("card\n")
         if isinstance(card, BuffANDdebuff):
+            #print("BuffANDdebuff\n")
             card_type = card.card_type.strip().lower() if isinstance(card.card_type, str) else None
-            print(card_type)
+            #print(card_type)
             if card_type.lower() == "gcard":
-                print("Adding a buff card to hand.")
+                #print("gcard\n")
+                #print("Adding a buff card to hand.")
                 self.buffHand.append(card)
-                print(self.buffHand)
+                #print(self.buffHand)
             elif card_type.lower() == "g/bcard" or card_type.lower() == "bcard":
+                #print("g/bcard or bcard\n")
                 self.debuffHand.append(card)
             else:
                 print("Error adding to hand")
@@ -87,6 +109,25 @@ class player:
             print("Cancelled or no cards available.")
         
         return removedCard
+    
+    #show elements in hand
+    def showBuffHand(self):
+        for i, card in enumerate(self.buffHand, 1):
+            print(f"{i}\n{card.displayCard()}\n")
+        return self.buffHand
+    
+    
+    def showDebuffHand(self):
+        for i, card in enumerate(self.debuffHand, 1):
+            print(f"{i}\n{card.displayCard()}\n")
+        return self.debuffHand
+    
+    def showCoreSpot(self):
+        for i, card in enumerate(self.coreSpot, 1):
+            print(f"{i}\n{card.displayCard()}\n")
+        return self.coreSpot
+    
+    
         
     
 
@@ -97,196 +138,430 @@ class oddPlayer(player):
         
     
 
+#gette the deck from the result of the main item functions
+import random
 
 def getRandomItems(data):
-    #print(data)
     resultList = []
-    
+
+    # If input is a dictionary
     if isinstance(data, dict):
-        #print("1")
-        data = {k: list(v) if isinstance(v, set) else v for k, v in data.items()}  # Convert sets to lists to allow modification
-        #print(data)
+        for key, value in list(data.items()):
+            if isinstance(value, dict):
+                # Recursively flatten nested dictionaries
+                data[key] = getRandomItems(value)
+            elif isinstance(value, set):
+                data[key] = list(value)  # Convert sets to lists
+
         while data:
             randomKey = random.choice(list(data.keys()))
-            
-            if isinstance(data[randomKey], list):  # Check if value is a list
-                item = random.choice(data[randomKey])
-                data[randomKey].remove(item)
-                resultList.append(item)
+            val = data[randomKey]
 
-                if not data[randomKey]:  # Remove key if list is empty
+            if isinstance(val, list):
+                item = random.choice(val)
+                val.remove(item)
+                resultList.append(item)
+                if not val:
                     del data[randomKey]
             else:
-                resultList.append(data.pop(randomKey))  # Remove single item directly
-        
-        
-    else :
-        #print(type(data))
-        resultList = random.sample(list(data), len(data))  # Shuffle list items randomly
-        for this in resultList:
-            print("resultList: "+ str(this))
-    
-    #print(str(resultList)+ "\n")
-        
-    
+                resultList.append(data.pop(randomKey))
+
+    # If it's a set or list (not dict)
+    elif isinstance(data, (set, list)):
+        resultList = random.sample(list(data), len(data))
+
+    else:
+        # Single item, just return in a list
+        resultList = [data]
 
     return resultList
 
 
-def setUpPlayer(numPlayer,instrument, reqOdd):
-    listPlayer =[]
-    
-    for i in range(numPlayer):
-        listPlayer.append(player(instrument))
-        
-    oddPlayerIndex= random.choice(range(len(listPlayer)))
 
-    listPlayer[oddPlayerIndex] = oddPlayer(instrument, reqOdd)
-    
-    return listPlayer
-
-def manageHand(player, handType):
-    
-    if (handType == 0):
-        if (len(player.buffHand()) > 0):
-            player.removeHand(0)
-    
-    elif (handType == 1): #debuff
-        if (len(player.buffHand()) > 0):
-            player.removeHand(0)
-            
-    
 def gettingEventShit():
     return event
-
-
-def handEventCards(eventCard):
-             
-    eventCard.displayCard()
-    
-    while(True):
-        outcome = int(input("what is the out come 1 or 2:  "))
-        if (outcome == 1):
-            print("\n")
-            print()
-            return  eventCard.event_typeA.lower()
-        elif (outcome == 2):
-            print("\n")
-            return eventCard.event_typeB.lower()
        
             
+class gameInformation:
+    
+    numPlayer = 0
+    numTiles = 40
+    startingTileChance = 80
+    includeCrossEvents = True
+    includeCrossChoise = True
+    mixCrossEvents = True
+    mixCrossChoises = True
+    useRangeBuffs = True
+    useRangeofCards = 50
+    
+
+    players = []
         
 
+    
+    gameDecks ={
+        tiles:[], #tiles
+        Cross:[], #crosroads
+        event:[], #events repurpuse for monsters
+        BuffANDdebuff:[], #buffs and debuffs
+        iteamCard:[], #iteams
+        adversaryCard:[], #adversary
+    }
+    
+    discard = {
+            tiles:[], #tiles
+            Cross:[], #crosroads
+            event:[], #events repurpuse for monsters
+            BuffANDdebuff:[], #buffs and debuffs
+            iteamCard:[], #iteams
+            adversaryCard:[], #adversary
+        }
+    
+    def __init__(self):
+        
+        
+        self.getPresets(bool(input("use set up presets: ").lower() == "true"))
+        
+         
+        tilesDic = tiles.main(self.numTiles, self.startingTileChance)
+        crossDic = crossroad.main(self.includeCrossEvents, self.includeCrossChoise, self.mixCrossEvents, self.mixCrossChoises)
+        
+
+        
+        buffANDdebDic = buffANDdebuff.main()
+        eventDic =  gettingEventShit().main(self.useRangeBuffs, self.useRangeofCards)
+        
+        adversaryDic = adversary.main()
+        
+        iteamDic = iteam.main()
+        
+        #self.tilesDeck = getRandomItems(tilesDic)
+        
+        #print ("crossDic: \n")
+        
+        #print(crossDic)
+        
+        #self.crossDeck = getRandomItems(crossDic)
+        #self.eventDeck = getRandomItems(eventDic)
+        #self.buffANDdebuffDeck = getRandomItems(buffANDdebDic["GCard"]) + getRandomItems(buffANDdebDic["BCard"]) + getRandomItems(buffANDdebDic["G/BCard"])
+        
+        
+        
+        
+        ''''''''''
+        
+        self.numPlayer = 0
+        self.numTiles = 40
+        self.startingTileChance = 80
+        self.includeCrossEvents = True
+        self.includeCrossChoise = True
+        self.mixCrossEvents = True
+        self.mixCrossChoises = True
+        self.useRangeBuffs = True
+        self.useRangeofCards = 50
+        '''''''''''
+        
+        '''
+        self.players = []
+        
+        self.tilesDeck = []
+        self.buffANDdebuffDeck = []
+        self.crossDeck = []
+        
+        self.iteams = []
+        self.adversaryDeck = []
+        '''
+        
+        
+        
+        
+        '''
+        for key, value in  adversaryDic.items():
+            
+            print("key: "+str(key))
+            for card in adversaryDic[key]:
+                print(card.displayCard())
+        '''
+        
+        
+        tilesDic = tiles.main(self.numTiles, self.startingTileChance)
+        crossDic = crossroad.main(self.includeCrossEvents, self.includeCrossChoise, self.mixCrossEvents, self.mixCrossChoises)
+        
+
+        
+        buffANDdebDic = buffANDdebuff.main()
+        eventDic =  gettingEventShit().main(self.useRangeBuffs, self.useRangeofCards)
+        
+        
+        adversaryDic = adversary.main()
+        
+        
+        self.gameDecks ={
+            tiles:getRandomItems(tilesDic), #tiles
+            Cross:getRandomItems(crossDic), #crosroads
+            event:getRandomItems(eventDic), #events repurpuse for monsters
+            BuffANDdebuff:getRandomItems(buffANDdebDic), #buffs and debuffs
+            iteamCard:getRandomItems(iteamDic), #iteams
+            adversaryCard:[] #adversary
+            
+        }
+        
+        self.gameDic ={
+            tiles: tilesDic, #tiles
+            Cross: crossDic, #crosroads
+            event: eventDic, #events repurpuse for monsters
+            BuffANDdebuff: buffANDdebDic, #buffs and debuffs 
+            iteamCard: iteamDic,
+            adversaryCard: adversaryDic
+        }
+        
+        self.discard = {
+            tiles:[], #tiles
+            Cross:[], #crosroads
+            event:[], #events repurpuse for monsters
+            BuffANDdebuff:[], #buffs and debuffs
+            iteamCard:[],
+            adversaryCard:[], #adversary
+        }
+        
+        print("\n setting up game: \n")
+       
+        
+       
+        #print ("crossDeck: \n")
+        
+        #print(crossDeck)
+        
+        '''
+        print(buffANDdebDic.keys())
+        for set in buffANDdebDic.keys():
+            for card in buffANDdebDic[set]:
+                print(card.displayCard())
+        '''
+    
+
+    def getPresets(self, usePresets):
+        
+        
+        if (usePresets):
+            #game peraiters
+            self.numPlayer = int(input("how many players: "))
+            
+        else:
+            #create new game
+            
+            self.numPlayer = int(input("how many players: "))
+            
+            
+            self.numTiles  = int(input("how many tiles: "))
+            self.startingTileChance = int(input("chance tiles: "))
+            
+            
+            # cross
+            self.includeCrossEvents = bool(input("inlcude cross events: ").lower() =="true" ) 
+            self.includeCrossChoise = bool(input ("inlcude cross choices: ").lower() == "true")
+            
+            if ( self.includeCrossEvents):
+                self.mixCrossEvents = bool(input("mix cross events: ").lower() =="true" ) 
+            else:
+                self.mixCrossEvents =False
+                
+            if (self.includeCrossChoise ):
+                self.mixCrossChoises = bool(input ("mix cross choices: ").lower() == "true")
+            else:
+                self.mixCrossChoises =False
+            
+            #buff and debuff
+            #mixBuffAndDebuff = bool(input("mix buffs: ").lower() =="true" ) 
+            
+            #evets
+            self.useRangeBuffs =  bool(input("generate events based on range: ").lower() == "true")
+            
+            if self.useRangeBuffs:
+                self.useRangeofCards = int(input("how many generated cards: "))
+            else:
+                self.useRangeofCards = None
+                
+     
+                
+    def handDecks (self,cardType):
+
+        
+        if (len(self.gameDecks[cardType]) == 0):
+            if (len(self.discard[cardType]) > 0):
+                
+                
+                newList = random.shuffle(self.discard[cardType])
+                #print("resuffle newList: " + str(newList))
+                #print("discardDeck: "+ str(discardDeck))
+                self.discard[cardType][:] = []
+                return newList
+            else:
+                newList = getRandomItems(self.gameDic[cardType])
+                #print("newGen newList: " + str(newList))
+                return newList
+        
+    
+    
+    
+    
+    
+    
+    
+    
+    def setUpPlayer(self,numPlayer,instrument, reqOdd):
+        listPlayer =[]
+        
+        for i in range(numPlayer):
+            listPlayer.append(player(instrument))
+            
+        oddPlayerIndex= random.choice(range(len(listPlayer)))
+
+        listPlayer[oddPlayerIndex] = oddPlayer(instrument, reqOdd)
+        
+        return listPlayer
+
+
+
+    def manageHand(player, handType):
+        
+        if (handType == 0):
+            if (len(player.buffHand()) > 0):
+                player.removeHand(0)
+        
+        elif (handType == 1): #debuff
+            if (len(player.buffHand()) > 0):
+                player.removeHand(0)
+                
+        
+
+    def handEventCards(eventCard):
+                
+        eventCard.displayCard()
+        
+        while(True):
+            outcome = int(input("what is the out come 1 or 2:  "))
+            if (outcome == 1):
+                print("\n")
+                print()
+                return  eventCard.event_typeA.lower()
+            elif (outcome == 2):
+                print("\n")
+                return eventCard.event_typeB.lower()
+
+        
+    
+        
+    def discardHandle(self, disIteam):
+        if isinstance(disIteam, Card) or isinstance(disIteam, tiles):
+            self.discard[type(disIteam)].append(disIteam)
+        else:
+            print("invalid input")
+
+            
+        
+        
+    def drawCard(self):
+        while True:
+            deckNumber = int(input("which deck do you want to draw from| avdersay 1, iteams: 2, Buff or Debuff: 3, crossroad: 4, cancel: 5"))
+            if deckNumber == 1:
+                
+                return self.gameDecks[adversary].pop(0)if  self.gameDecks[adversary] else None
+            elif deckNumber == 2:
+                return self.gameDecks[BuffANDdebuff].pop(0) if self.gameDecks[BuffANDdebuff] else None
+            elif deckNumber == 3:
+                return self.gameDecks[iteamCard].pop(0) if self.gameDecks[iteamCard] else None
+            elif deckNumber == 4:
+                return self.gameDecks[Cross].pop(0) if self.gameDecks[Cross] else None
+            elif deckNumber == 5:
+                print("cancled")
+                return None
+            else:
+                print("Invalid deck number")
+                
+
+    def main(self):
+        pass    
+    
+        
+def handTiles(gameStore,tile):
+    currCard = ""
+    if tile.color == "RED":
+        return (gameStore.gameDecks[adversary].pop(0))
+    
+        
+
+        #discard[3][0].append( buffDeck[0])
+        #buffDeck.pop(0)
+        
+    elif tile.color == "YELLOW":
+        return (gameStore.gameDecks[iteam].pop(0))
+        
+    
+    elif tile.color == "MAGENTA":
+    
+        return (gameStore.gameDecks[BuffANDdebuff].pop(0))
+    
+    return currCard
+    
+    
+    
 
 
 def main():
     
-    #game peraiters
-    numPlayer = 4#int(input("how many players: "))
+    #gameStorage.getPresets(bool(input("use set up presets: ").lower() == "true"))
     
-    #tiles
-    numTiles  = 40 #int(input("how many tiles: "))
-    startingTileChance = 80 #int(input("chance tiles: "))
-    
-    
-    # cross
-    includeCrossEvents = True #bool(input("inlcude cross events: ").lower() =="true" ) 
-    includeCrossChoise = True #bool(input ("inlcude cross choices: ").lower() == "true")
-    
-    if ( includeCrossEvents):
-        mixCrossEvents = True #bool(input("mix cross events: ").lower() =="true" ) 
+    '''
+    # Game parameters
+    numPlayer = 4  # Number of players
+
+    # Tile settings
+    numTiles = 40  # Total number of tiles on the board
+    startingTileChance = 80  # Chance (%) for a tile to be active at the start
+
+    # Cross event settings
+    includeCrossEvents = True  # Include cross events in the game
+    includeCrossChoice = True  # Include choices during cross events
+
+    if includeCrossEvents:
+        mixCrossEvents = True  # Mix the order of cross events
     else:
-        mixCrossEvents =False
-        
-    if (includeCrossChoise ):
-        mixCrossChoises = True #bool(input ("mix cross choices: ").lower() == "true")
+        mixCrossEvents = False
+
+    if includeCrossChoice:
+        mixCrossChoices = True  # Mix the order of cross choices
     else:
-        mixCrossChoises =False
-    
-    #buff and debuff
-    #mixBuffAndDebuff = bool(input("mix buffs: ").lower() =="true" ) 
-    
-    #evets
-    useRangeBuffs =  True #bool(input("generate events based on range: ").lower() == "true")
-    
+        mixCrossChoices = False
+
+    # Buff/Debuff settings
+    # mixBuffAndDebuff = False  # Enable this if buffs/debuffs should be mixed
+
+    # Event generation
+    useRangeBuffs = True  # Generate events based on player range or tile index
+
     if useRangeBuffs:
-        useRangeofCards = 50 #int(input("how many generated cards: "))
+        useRangeofCards = 50  # Number of generated cards based on range
     else:
         useRangeofCards = None
-        
-    
+    '''
+
     
     #establish decks
     
-    tilesDic = tiles.main(numTiles, startingTileChance)
-    crossDic = crossroad.main(includeCrossEvents, includeCrossChoise, mixCrossEvents, mixCrossChoises)
-    
-
-    
-    buffANDdebDic = buffANDdebuff.main()
-    eventDic =  gettingEventShit().main(useRangeBuffs, useRangeofCards)
-    
-    tilesDeck = getRandomItems(tilesDic)
-    
-    #print ("crossDic: \n")
-    
-    #print(crossDic)
-    
-    crossDeck = getRandomItems(crossDic)
-    eventDeck = getRandomItems(eventDic)
-    
-    #print ("crossDeck: \n")
-    
-    #print(crossDeck)
-    
-    '''''''''
-    print(buffANDdebDic.keys())
-    for set in buffANDdebDic.keys():
-        for card in buffANDdebDic[set]:
-            print(card.displayCard())
-    '''''''''
-    
-    buffDeck = getRandomItems(buffANDdebDic["GCard"])
-    debuffDeck = getRandomItems(buffANDdebDic["BCard"])
-    buffANDdebuffDeck = getRandomItems(buffANDdebDic["G/BCard"])
-    
-    discard = {
-        0:[], #tiles
-        1:[], #crosroads
-        2:[], #events
-        3:{   #debuffDeck
-            0:[], #Buff
-            1:[], #Debuff
-            2:[]  #B/D
-        }, 
-        
-    }
     
     
     
-    def handDecks (dictionary, deckList, discardDeck):
-        print(dictionary )
-        print(deckList )
-        print( discardDeck)
-        if ( isinstance(deckList, list)):
-            if (len(deckList) == 0):
-                if (len(discardDeck) > 0):
-                    
-                    random.shuffle(discardDeck)
-                    newList = discardDeck
-                    #print("resuffle newList: " + str(newList))
-                    #print("discardDeck: "+ str(discardDeck))
-                    return newList
-                else:
-                    newList = getRandomItems(dictionary)
-                    #print("newGen newList: " + str(newList))
-                    return newList
-                    
-        
-        else: 
-            print("you fuck up")
+    
+    
+    
             
     #def readTitelTypes()
+    
+    
+            
+            
+        
     
     
     
@@ -295,38 +570,49 @@ def main():
     
     
     #/////////running code/////////////
+    gameStorage = gameInformation()
     
     
-    listPlayer = setUpPlayer(numPlayer, "instrument" ,  "PlayHolder")
+    listPlayer = gameStorage.setUpPlayer(gameStorage.numPlayer, "instrument", "placeHolder")
     
+    gameStorage.players[:] = listPlayer
     #print ( "listPlayer: " + str(listPlayer) )
     
     isGameComplet = False
     
+    print("alltypes")
+    for card in gameStorage.gameDecks[BuffANDdebuff]:
+        print(card.displayCard())
+    
     
         
     indexPlayer  = -1
-    
+    print ("idmam: " + str(gameStorage.numPlayer))
+    for i in range(gameStorage.numPlayer):
+        gameStorage.players.append(player("placeHolder"))
+        
     
 
     
     
     while(not isGameComplet):
         
-        indexPlayer = (indexPlayer + 1) % numPlayer
+        
+        
+        indexPlayer = (indexPlayer + 1) % gameStorage.numPlayer
         
         print("indexPlayer: " + str(indexPlayer))
         
-        currPlayer = listPlayer[indexPlayer]
+        currPlayer = gameStorage.players[indexPlayer]
         
-        currCrossRoad = crossDeck[0]
+        currCrossRoad = gameStorage.gameDecks[Cross][0]
         
         print(currCrossRoad.displayCard())
         
         
         #print(currCrossRoad.displayCard())
         
-        crossDeck.pop(0)
+        gameStorage.gameDecks[Cross].pop(0)
         
         
          
@@ -337,28 +623,16 @@ def main():
         currCard = None
         
         while (action != 0 and action != 9):
-            
-            
-            
-            
-            for dictionary, deck, discard_pile in [
-                (tilesDic, tilesDeck, discard[0]),
-                (crossDic, crossDeck, discard[1]),
-                (eventDic, eventDeck, discard[2]),
-                (buffANDdebDic["GCard"], buffDeck, discard[3][0]),
-                (buffANDdebDic["BCard"], debuffDeck, discard[3][1]),
-                (buffANDdebDic["G/BCard"], buffANDdebuffDeck, discard[3][2]),
-            ]:
+            for keys, vales in gameStorage.gameDecks.items():
+
                 
-                
-                
-                if len(deck) == 0:
-                    outputdeck = handDecks(dictionary, deck, discard_pile)  # Make sure this returns an iterable
+                if len(vales) == 0:
+                    outputdeck = gameStorage.handDecks(keys)  # Make sure this returns an iterable
                     
                     if isinstance(outputdeck, list):  # Ensure outputdeck is a list before assigning
-                        deck[:] = outputdeck  # Modify the original list in place
+                        gameStorage.gameDecks[keys][:] = outputdeck  # Modify the original list in place
                         #print(f"Updated {dictionary} deck: {deck}")
-                        discard_pile[:] = []
+                        gameStorage.discard[keys][:] = []
                     else:
                         print(f"Error: handDecks returned a non-list value: {outputdeck}")
 
@@ -369,16 +643,20 @@ def main():
             
             if (action == 1):
                 
-                drawnTile = tilesDeck[0]
-                discard[0].append(drawnTile)
-                tilesDeck.pop(0)
+                drawnTile = gameStorage.gameDecks[tiles].pop(0)
+                gameStorage.discard[tiles].append(drawnTile)
+                
                 
                 print("tile, " + str(drawnTile.color)  + "\n")
                 print(drawnTile.displayTiles())
                 
+                currCard = handTiles(gameStorage,drawnTile )
+                
+                
+                
                 print('\n')
                 
-                
+                '''''''''
                 if drawnTile.color == "GREEN":
                     currCard = (buffDeck[0])
                     #currPlayer.addToHand(currCard)
@@ -444,6 +722,7 @@ def main():
                     
                     discard[2].append(eventDeck[0])
                     eventDeck.pop(0)
+                '''''''''
                     
                         
                     
@@ -453,25 +732,25 @@ def main():
                 
             elif (action == 3):
                 
+                #print(str(type(currPlayer)) + "\n")
+                
                 if (currCard != None):
-                    if (cardType == "gcard"):
-                        currPlayer.addToHand(currCard)
-                        
-                    elif(cardType == "g/bcard"):
-                        currPlayer.addToHand(currCard)
-                        
-                        
-                    elif (cardType == "bcard"):
-                        currPlayer.addToHand(currCard)
+                    #print("card Not none\n")
+                    currPlayer.addToHand(currCard)
+                    
                         
                 else:
                     print("there is no current card")
                 
                 currCard =None     
             elif (action == 4):
-                remCard = currPlayer.removeHand()
                 
+                remCard = currPlayer.removeHand()
+                gameStorage.discardHandle(remCard)
+                
+                '''''''''
                 if (remCard):
+                    
                     if (remCard.card_type.lower() == "gcard"):
                         discard[3][0].append( remCard)
                         buffDeck.pop(0)
@@ -485,6 +764,7 @@ def main():
                     elif  remCard.card_type.lower() == "g/bcard":
                         discard[3][2].append( buffANDdebuffDeck[0])
                         buffANDdebuffDeck.pop(0)
+                '''''''''
                 
                 
             elif (action == 5):
@@ -515,7 +795,7 @@ def main():
             else:
                 print("not a valid input")
                 
-        discard[1].append(currCrossRoad)
+        gameStorage.discard[Cross].append(currCrossRoad)
         
         if (action ==9):
             isGameComplet = True
