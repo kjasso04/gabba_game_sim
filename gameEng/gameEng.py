@@ -29,6 +29,7 @@ from cards.event import event
 from adversary import adversary
 
 from tiles import tiles
+from tiles.tiles import Tile
 
 
 
@@ -75,13 +76,15 @@ class player:
                 print("Error adding to hand")
         elif isinstance(card, Cross):
             self.coreSpot.append(card)
+        elif  isinstance(card, iteamCard):
+            self.addItem(card)
         else:
             print(f"Trying to add {getattr(card, 'type', 'Unknown')}")
 
     def removeHand(self, userInput =None):
         removedCard = None
         if userInput == None:
-            userInput = int(input("buff: 0 ,debuff: 1 ,cancel: 2"))
+            userInput = int(input("buff: 0 ,debuff: 1 , iteam: 2, cross road:3, cancel: 4\n"))
         
             
         if userInput == 0 and self.buffHand:
@@ -105,8 +108,36 @@ class player:
                 del self.debuffHand[cardIndex]
             else:
                 print("Invalid index.")
+                
+        elif userInput == 2 and len(self.item) > 0:
+            for i in range(len(self.item)):
+                print(f"{i}\n{card.displayCard()}\n")
+
+            cardIndex = int(input("Which card would you like to discard? ")) - 1
+            if 0 <= cardIndex < len(self.item):
+                removedCard =self.item[cardIndex]
+                del self.item[cardIndex]
+            else:
+                print("Invalid index.")
+                
+                
+        elif userInput == 3 and (len(self.coreSpot) > 1):
+            for i in range(1, len(self.coreSpot)):
+                print(str(i) + "\n")
+                print(self.coreSpot[i].displayCard())
+
+            cardIndex = int(input("Which card would you like to discard? ")) 
+            if 1 <= cardIndex <= len(self.coreSpot):
+                removedCard = self.coreSpot[cardIndex]
+                del self.coreSpot[cardIndex]
+            else:
+                print("Invalid index.")
+
+                
         else:
             print("Cancelled or no cards available.")
+            
+            
         
         return removedCard
     
@@ -196,6 +227,8 @@ class gameInformation:
     
 
     players = []
+    
+    adversarysList = []
         
 
     
@@ -302,7 +335,7 @@ class gameInformation:
             event:getRandomItems(eventDic), #events repurpuse for monsters
             BuffANDdebuff:getRandomItems(buffANDdebDic), #buffs and debuffs
             iteamCard:getRandomItems(iteamDic), #iteams
-            adversaryCard:[] #adversary
+            adversaryCard: getRandomItems(adversaryDic)
             
         }
         
@@ -453,8 +486,11 @@ class gameInformation:
     
         
     def discardHandle(self, disIteam):
-        if isinstance(disIteam, Card) or isinstance(disIteam, tiles):
-            self.discard[type(disIteam)].append(disIteam)
+        if isinstance(disIteam, Card) or isinstance(disIteam, iteamCard) or isinstance( disIteam, adversaryCard):
+            if isinstance(disIteam, CrossEvents) or isinstance(disIteam, CrossChoise):
+                self.discard[Cross].append(disIteam)
+            else:
+                self.discard[type(disIteam)].append(disIteam)
         else:
             print("invalid input")
 
@@ -463,21 +499,91 @@ class gameInformation:
         
     def drawCard(self):
         while True:
-            deckNumber = int(input("which deck do you want to draw from| avdersay 1, iteams: 2, Buff or Debuff: 3, crossroad: 4, cancel: 5"))
+            
+            
+            
+            
+            
+            deckNumber = int(input("which deck do you want to draw from| avdersay: 1, Buff or Debuff: 2, iteams: 3, Crossroad card: 4, cancel: 5, input: "))
             if deckNumber == 1:
                 
-                return self.gameDecks[adversary].pop(0)if  self.gameDecks[adversary] else None
+                card = self.gameDecks[adversaryCard].pop(0)if  self.gameDecks[adversaryCard] else None
+                self.adversarysList.append(card)
+                print(card.displayCard())
+                print("\n")
+                return card
             elif deckNumber == 2:
-                return self.gameDecks[BuffANDdebuff].pop(0) if self.gameDecks[BuffANDdebuff] else None
+                card =self.gameDecks[BuffANDdebuff].pop(0) if self.gameDecks[BuffANDdebuff] else None
+                print(card.displayCard())
+                print("\n")
+                return card
             elif deckNumber == 3:
-                return self.gameDecks[iteamCard].pop(0) if self.gameDecks[iteamCard] else None
+                card = self.gameDecks[iteamCard].pop(0) if self.gameDecks[iteamCard] else None
+                print(card.displayCard())
+                print("\n")
+                return card
             elif deckNumber == 4:
-                return self.gameDecks[Cross].pop(0) if self.gameDecks[Cross] else None
+                card = self.gameDecks[Cross].pop(0) if self.gameDecks[Cross] else None
+                print(card.displayCard())
+                print("\n")
+                return
             elif deckNumber == 5:
                 print("cancled")
                 return None
             else:
                 print("Invalid deck number")
+                
+    def addAdversary(self, player):
+        print("current adversarys \n")
+        for i in range(len(self.adversarysList)):
+            print(str(i) + "\n")
+            print(self.adversarysList[i].displayCard())
+            print("\n")
+            
+        while True:
+            try:
+                userinput = int(input("input the card index or -1 to cancel: "))
+            except ValueError:
+                print("Please enter a valid integer.")
+                continue
+            
+            if userinput == -1:
+                return
+            elif 0 <= userinput < len(self.adversarysList):
+                player.addToHand(self.adversarysList[userinput].getDebuffCard())
+                return  # assuming you want to exit after adding
+            else:
+                print("Invalid input")
+
+                
+    def removeAdversary(self):
+        print("current adversarys \n")
+        for i in range(len(self.adversarysList)):
+            print(str(i)+"\n")
+            print(self.adversarysList[i].displayCard())
+            print("\n")
+            
+        while True:
+            try:
+                userinput = int(input("input the card index or -1 to cancel: "))
+            except ValueError:
+                print("Please enter a valid integer.")
+                continue
+            
+            if userinput == -1:
+                return
+            elif 0 <= userinput < len(self.adversarysList):
+                self.adversarysList.pop(userinput)
+                return  # assuming you want to exit after adding
+            else:
+                print("Invalid input")
+                
+                
+    
+    
+
+    
+    
                 
 
     def main(self):
@@ -622,7 +728,7 @@ def main():
         cardType =""
         currCard = None
         
-        while (action != 0 and action != 9):
+        while (action != 0 ):
             for keys, vales in gameStorage.gameDecks.items():
 
                 
@@ -638,7 +744,7 @@ def main():
 
             
             
-            action =  int(input("what action| 0: finish turn, 1: move, 2: addCrossroadDebuff, 3: addCard, 4: discard, 5: show buff's, 6: show debuffs, 7: show instrement, 8: show card , 9: finish game  \n"))
+            action =  int(input("what action| finish turn: 0, move: 1, drawCard: 2, addCard: 3, discard: 4, show Hand: 5, show card: 6, show adversarys: 7, finish game: 8  \n"))
             print("\n")
             
             if (action == 1):
@@ -649,104 +755,63 @@ def main():
                 
                 print("tile, " + str(drawnTile.color)  + "\n")
                 print(drawnTile.displayTiles())
-                
-                currCard = handTiles(gameStorage,drawnTile )
+            
                 
                 
                 
                 print('\n')
-                
-                '''''''''
-                if drawnTile.color == "GREEN":
-                    currCard = (buffDeck[0])
-                    #currPlayer.addToHand(currCard)
-                    cardType = "gcard"
-                    
-   
-                    #discard[3][0].append( buffDeck[0])
-                    #buffDeck.pop(0)
-                
-                    
-                    
-                elif drawnTile.color == "RED":
-                    currCard = (debuffDeck[0])
-                    #currPlayer.addToHand(currCard)
-                    cardType = "bcard"
-
-                    #if (len(player.buffHand()) > 0):
-                    #    remvedCard = currPlayer.removeHand(0)
-                    
-                    #discard[3][1].append( debuffDeck[0])
-                    #debuffDeck.pop(0)
-                    
-                elif drawnTile.color == "MAGENTA":
-                    currCard =(buffANDdebuffDeck[0])
-                    #currPlayer.addToHand(currCard)
-                    cardType = "g/bcard"
-                    
-                    #discard[3][2].append( buffANDdebuffDeck[0])
-                    #buffANDdebuffDeck.pop(0)
-                
-                elif drawnTile.color == "CYAN":
-                    
-                    eventCard = eventDeck[0]
-                    
-                    eventOutcome = handEventCards(eventCard)
-                    
-                    if  eventOutcome == "gcard":
-                        print ("buffDeck")
-                        card = (buffDeck[0])
-                        #currPlayer.addToHand(currCard)
-                        
-                        print(card.displayCard() + "\n")
-                        
-                    elif eventOutcome == "bcard":
-                        print ("bcard: "+ str(debuffDeck))
-                        card = (debuffDeck[0])
-                        #currPlayer.addToHand(currCard)
-                        
-                        print(card.displayCard() + "\n")
-
-                    elif eventOutcome == "g/bcard":
-                        
-                        print( "buffANDdebuffDeck: " + str(buffANDdebuffDeck))
-                        card = (buffANDdebuffDeck[0])
-                        #currPlayer.addToHand(currCard)
-                        
-                        print(card.displayCard() + "\n")
-                    else:
-                        card = None
-                    
-                    currCard = card
-                    
-                    
-                    discard[2].append(eventDeck[0])
-                    eventDeck.pop(0)
-                '''''''''
-                    
                         
                     
                     
             elif (action == 2):
-                currPlayer.addToHand(currCrossRoad)
+                #drawCard
+                currCard = gameStorage.drawCard()
+                
                 
             elif (action == 3):
                 
                 #print(str(type(currPlayer)) + "\n")
-                
-                if (currCard != None):
-                    #print("card Not none\n")
-                    currPlayer.addToHand(currCard)
+               
+                #print("card Not none\n")
+                userInput = -1
+                while(True):
+                    userInput =int(input("adversaryCard: 1, current card: 2, crossRoad: 3, cancel: 4, input: "))
+                    if userInput == 1:
+                        gameStorage.addAdversary(currPlayer)
+                        break
+                    elif userInput == 2:
+                        if ( currCard is not None):
+                            currPlayer.addToHand(currCard)
+                            currCard =None   
+                        else:
+                            print("there is no current card")  
+                        break
+                    elif userInput == 3:
+                        currPlayer.addToHand(currCrossRoad) 
+                        break 
+                    elif userInput ==4:
+                        break
                     
-                        
-                else:
-                    print("there is no current card")
-                
-                currCard =None     
+  
+                  
             elif (action == 4):
                 
-                remCard = currPlayer.removeHand()
-                gameStorage.discardHandle(remCard)
+                userInput = -1
+                while(True):
+                    userInput =int(input("adversaryEnemy : 1, other card: 2, cancel: 3, input: "))
+                    if userInput == 1:
+                        gameStorage.removeAdversary()
+                        break
+                    elif userInput == 2:
+                        
+                        remCard = currPlayer.removeHand()
+                        gameStorage.discardHandle(remCard)
+
+                        break
+                    elif userInput ==3:
+                        break
+                
+                
                 
                 '''''''''
                 if (remCard):
@@ -768,26 +833,59 @@ def main():
                 
                 
             elif (action == 5):
-                for card in currPlayer.buffHand:
-                    print(card.displayCard())
-                    print("\n")
+                choice = -1
+                while choice not in [0, 1, 2, 3, 4]:
+                    try:
+                        choice = int(input("Options — buffs: 0, debuff: 1, coreSpot: 2, items: 3, cancel: 4, input: "))
+                    except ValueError:
+                        print("Please enter a valid integer.")
+                        continue
+
+                    if choice == 0:
+                        for card in currPlayer.buffHand:
+                            print(card.displayCard())
+                            print()
+                    elif choice == 1:
+                        for card in currPlayer.debuffHand:
+                            print(card.displayCard())
+                            print()
+                    elif choice == 2:
+                        for i in range(len(currPlayer.coreSpot)):
+                            print(str(i)+": \n")
+                            if (isinstance(currPlayer.coreSpot[i], str) ):
+                                print(currPlayer.coreSpot[i])
+                            else:
+                                
+                                print(currPlayer.coreSpot[i].displayCard())
+                            print("\n")
+                        
+                        
+                    elif choice ==3:
+                        for i in range(len(currPlayer.item)):
+                            print(currPlayer.item[i].displayCard())
+                            print("\n")
+                        
+                    elif choice == 4:
+                        print("Cancelled.")
+                        break
+                    else:
+                        print("Invalid input")
+
                     
-            elif(action == 6):
-                for card in currPlayer.debuffHand:
-                    print(card.displayCard())
-                    print("\n")
-                    
-            elif(action == 7):
-                print(currPlayer.coreSpot)
-                print("\n")
+                        
                 
-            elif(action == 8):
+            elif(action == 6):
                 if (currCard):
                     print(currCard.displayCard())
                 else:
                     print("no current card \n")
+                    
+            elif(action == 7):
+                for i in (range(len(gameStorage.adversarysList))):
+                    print(gameStorage.adversarysList[i].displayCard())
                 
-            elif(action == 9):
+            elif(action == 8):
+                isGameComplet = True
                 break
             
             elif (action == 0):
@@ -796,9 +894,7 @@ def main():
                 print("not a valid input")
                 
         gameStorage.discard[Cross].append(currCrossRoad)
-        
-        if (action ==9):
-            isGameComplet = True
+    
         
      
         #action =  int(input("what action| 0: finish turn, 1: move, 2: addCrossroadDebuff, 3: addCard, 4: discard, 5: show buff's, 6: show debuffs, 7: show instrement, 8: show card , 9: finish game  \n"))

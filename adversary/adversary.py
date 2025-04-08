@@ -68,6 +68,9 @@ class adversaryCard:
             input = int(input("input you roll: \n"))
         return (self.roll <= input)
     
+    def getDebuffCard(self):
+        return self.debuffCard
+    
     
         
             
